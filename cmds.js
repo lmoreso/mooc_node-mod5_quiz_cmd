@@ -1,6 +1,6 @@
 
 
-const {log, biglog, errorlog, colorize} = require("./out");
+const { log, biglog, errorlog, colorize } = require("./out");
 
 const model = require('./model');
 
@@ -52,7 +52,7 @@ exports.showCmd = (rl, id) => {
         try {
             const quiz = model.getByIndex(id);
             log(` [${colorize(id, 'magenta')}]:  ${quiz.question} ${colorize('=>', 'magenta')} ${quiz.answer}`);
-        } catch(error) {
+        } catch (error) {
             errorlog(error.message);
         }
     }
@@ -97,7 +97,7 @@ exports.deleteCmd = (rl, id) => {
     } else {
         try {
             model.deleteByIndex(id);
-        } catch(error) {
+        } catch (error) {
             errorlog(error.message);
         }
     }
@@ -124,11 +124,11 @@ exports.editCmd = (rl, id) => {
         try {
             const quiz = model.getByIndex(id);
 
-            process.stdout.isTTY && setTimeout(() => {rl.write(quiz.question)},0);
+            process.stdout.isTTY && setTimeout(() => { rl.write(quiz.question) }, 0);
 
             rl.question(colorize(' Introduzca una pregunta: ', 'red'), question => {
 
-                process.stdout.isTTY && setTimeout(() => {rl.write(quiz.answer)},0);
+                process.stdout.isTTY && setTimeout(() => { rl.write(quiz.answer) }, 0);
 
                 rl.question(colorize(' Introduzca la respuesta ', 'red'), answer => {
                     model.update(id, question, answer);
@@ -143,6 +143,36 @@ exports.editCmd = (rl, id) => {
     }
 };
 
+/**
+ * Juega un quiz (lanza pregunta y valora la respuesta).
+ *
+ * @param rl Objeto readline usado para implementar el CLI.
+ * @param id Clave del quiz a Jugar. Si es nulo se coge uno al azahar.
+ * 
+ * Devuelve true / false
+ */
+let juegaQuiz = (rl, id) => {
+    if (typeof id === "undefined") {
+        id = (Math.floor(Math.random() * model.count())).toFixed(0);
+    }
+    try {
+        const quiz = model.getByIndex(id);
+
+        //process.stdout.isTTY && setTimeout(() => { rl.write(quiz.question) }, 0);
+        rl.question(colorize(`${quiz.question}\n`, 'blue'), answer => {
+            if (answer === quiz.answer) {
+                biglog('Correcto!', 'green')
+            } else {
+                biglog('Error!', 'red')
+            }
+            rl.prompt();
+        });
+    } catch (error) {
+        errorlog(error.message);
+        rl.prompt();
+    }
+
+};
 
 /**
  * Prueba un quiz, es decir, hace una pregunta del modelo a la que debemos contestar.
@@ -151,9 +181,9 @@ exports.editCmd = (rl, id) => {
  * @param id Clave del quiz a probar.
  */
 exports.testCmd = (rl, id) => {
-    log('Probar el quiz indicado.', 'red');
-    rl.prompt();
+    juegaQuiz(rl, id);
 };
+
 
 
 /**
