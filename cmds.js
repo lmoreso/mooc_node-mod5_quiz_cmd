@@ -1,4 +1,4 @@
-
+const readline = require('readline');
 
 const { log, biglog, errorlog, colorize } = require("./out");
 
@@ -159,11 +159,13 @@ let juegaQuiz = (rl, id) => {
         const quiz = model.getByIndex(id);
 
         //process.stdout.isTTY && setTimeout(() => { rl.write(quiz.question) }, 0);
-        rl.question(colorize(`${quiz.question}\n`, 'blue'), answer => {
+        rl.question(colorize(`${quiz.question} > `, 'blue'), answer => {
             if (answer === quiz.answer) {
+                log('Su respuesta es Correcta!', 'green')
                 biglog('Correcto!', 'green')
             } else {
-                biglog('Error!', 'red')
+                log('Su respuesta es Incorrecta!', 'red')
+                biglog('Incorrecto!', 'red')
             }
             rl.prompt();
         });
@@ -185,6 +187,13 @@ exports.testCmd = (rl, id) => {
 };
 
 
+// eslint-disable-next-line no-unused-vars
+let pintaPreguntas = (miArrayDePreguntas) => {
+    log(`El array de preguntas tiene ${miArrayDePreguntas.length} elementos:`)
+    for (let i = 0; i < miArrayDePreguntas.length; i++) {
+        log(` [${colorize(i, 'magenta')}]:  ${miArrayDePreguntas[i].question} ${colorize('=>', 'magenta')} ${miArrayDePreguntas[i].answer}`);
+    }
+}
 
 /**
  * Pregunta todos los quizzes existentes en el modelo en orden aleatorio.
@@ -192,8 +201,29 @@ exports.testCmd = (rl, id) => {
  *
  * @param rl Objeto readline usado para implementar el CLI.
  */
-exports.playCmd = rl => {
-    log('Jugar.', 'red');
+exports.playCmd = async rl => {
+    // duplico array ordenándolo de forma aleatoria
+    let misPreguntas = model.getAll().sort(function () { return Math.random() - 0.5 });
+    // pintaPreguntas(misPreguntas);
+    rl.pause();
+    const rloc = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+    });
+
+    for (let i = 0; i < misPreguntas.length; i++) {
+        await rloc.question(colorize(`${misPreguntas[i].question} > `, 'blue'), answer => {
+            if (answer === misPreguntas[i].answer) {
+                log('Su respuesta es Correcta!', 'green');
+                biglog('Correcto!', 'green');
+            } else {
+                log('Su respuesta es Incorrecta!', 'red');
+                biglog('Incorrecto!', 'red');
+            }
+        });
+    }
+    rloc.close();
+    rl.resume();
     rl.prompt();
 };
 
