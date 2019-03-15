@@ -1,5 +1,3 @@
-const readline = require('readline');
-
 const { log, biglog, errorlog, colorize } = require("./out");
 
 const model = require('./model');
@@ -143,25 +141,21 @@ exports.editCmd = (rl, id) => {
     }
 };
 
+
 /**
- * Juega un quiz (lanza pregunta y valora la respuesta).
+ * Prueba un quiz, es decir, hace una pregunta del modelo a la que debemos contestar.
  *
  * @param rl Objeto readline usado para implementar el CLI.
- * @param id Clave del quiz a Jugar. Si es nulo se coge uno al azahar.
- * 
- * Devuelve true / false
+ * @param id Clave del quiz a probar.
  */
-let juegaQuiz = (rl, id) => {
-    if (typeof id === "undefined") {
-        id = (Math.floor(Math.random() * model.count())).toFixed(0);
-    }
+exports.testCmd = (rl, id) => {
     try {
         const quiz = model.getByIndex(id);
 
         //process.stdout.isTTY && setTimeout(() => { rl.write(quiz.question) }, 0);
         rl.question(colorize(`${quiz.question} > `, 'blue'), answer => {
-            if (answer === quiz.answer) {
-                log('Su respuesta es Correcta!', 'green')
+            if (answer.toUpperCase() === quiz.answer.toUpperCase()) {
+                log(`Su respuesta es Correcta!`, 'green')
                 biglog('Correcto!', 'green')
             } else {
                 log('Su respuesta es Incorrecta!', 'red')
@@ -173,17 +167,6 @@ let juegaQuiz = (rl, id) => {
         errorlog(error.message);
         rl.prompt();
     }
-
-};
-
-/**
- * Prueba un quiz, es decir, hace una pregunta del modelo a la que debemos contestar.
- *
- * @param rl Objeto readline usado para implementar el CLI.
- * @param id Clave del quiz a probar.
- */
-exports.testCmd = (rl, id) => {
-    juegaQuiz(rl, id);
 };
 
 
@@ -201,30 +184,34 @@ let pintaPreguntas = (miArrayDePreguntas) => {
  *
  * @param rl Objeto readline usado para implementar el CLI.
  */
-exports.playCmd = async rl => {
+exports.playCmd = rl => {
     // duplico array ordenándolo de forma aleatoria
     let misPreguntas = model.getAll().sort(function () { return Math.random() - 0.5 });
     // pintaPreguntas(misPreguntas);
-    rl.pause();
-    const rloc = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-    });
+    let indiceActual = 0;
+    let numQuiz = misPreguntas.length;
 
-    for (let i = 0; i < misPreguntas.length; i++) {
-        await rloc.question(colorize(`${misPreguntas[i].question} > `, 'blue'), answer => {
-            if (answer === misPreguntas[i].answer) {
-                log('Su respuesta es Correcta!', 'green');
-                biglog('Correcto!', 'green');
-            } else {
-                log('Su respuesta es Incorrecta!', 'red');
-                biglog('Incorrecto!', 'red');
-            }
-        });
+    async function playQuiz() {
+        if (indiceActual < numQuiz) {
+            await rl.question(colorize(`${misPreguntas[indiceActual].question} > `, 'blue'), answer => {
+                if (answer.toUpperCase() === misPreguntas[indiceActual].answer.toUpperCase()) {
+                    log(`CORRECTO: Llevas ${indiceActual + 1} aciertos.`, 'green')
+                    indiceActual++;
+                    playQuiz();
+                } else {
+                    log('INCORRECTO!', 'red');
+                    log(`Fin del Juego. Aciertos: ${indiceActual}.`, 'red')
+                    biglog(indiceActual, 'magenta');
+                    rl.prompt();
+                }
+            });
+        } else {
+            log(`Fin del Juego. Aciertos: ${indiceActual}.`, 'green')
+            biglog(`Fin del Juego: ${indiceActual}.`, 'magenta')           
+            rl.prompt();
+        }
     }
-    rloc.close();
-    rl.resume();
-    rl.prompt();
+    playQuiz();
 };
 
 
